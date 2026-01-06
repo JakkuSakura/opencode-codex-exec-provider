@@ -1,15 +1,9 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { applyQueryParams, loadCodexConfig, resolveModel } from "./config";
-export function ensureMode(options) {
-    if (options.mode && typeof options.mode === "object" && "type" in options.mode) {
-        return options;
-    }
-    return {
-        ...options,
-        mode: { type: "regular" },
-    };
+export function selectModel(client, wireApi, modelId) {
+    return wireApi === "chat" ? client.chat(modelId) : client.responses(modelId);
 }
-export function createLanguageModel(provider, modelId, options) {
+export function createLanguageModel(provider, modelId, options, overrideWireApi) {
     const config = loadCodexConfig(options);
     const resolvedModel = resolveModel(config.model, modelId, options.useCodexConfigModel);
     if (!resolvedModel) {
@@ -24,13 +18,6 @@ export function createLanguageModel(provider, modelId, options) {
         baseURL,
         headers: config.headers,
     });
-    const model = config.wireApi === "chat" ? client.chat(resolvedModel) : client.responses(resolvedModel);
-    return {
-        specificationVersion: "v3",
-        provider,
-        modelId: resolvedModel,
-        supportedUrls: {},
-        doGenerate: (options) => model.doGenerate(ensureMode(options)),
-        doStream: (options) => model.doStream(ensureMode(options)),
-    };
+    const wireApi = overrideWireApi ?? config.wireApi;
+    return selectModel(client, wireApi, resolvedModel);
 }

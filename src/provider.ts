@@ -1,23 +1,21 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { applyQueryParams, loadCodexConfig, resolveModel, CodexProviderOptions } from "./config";
 
-type ModeLike = { type: string; [key: string]: unknown };
-type MaybeModeCallOptions = Record<string, unknown> & { mode?: ModeLike };
+type WireApi = "chat" | "responses";
 
-export function ensureMode(options: MaybeModeCallOptions): MaybeModeCallOptions & { mode: ModeLike } {
-  if (options.mode && typeof options.mode === "object" && "type" in options.mode) {
-    return options as MaybeModeCallOptions & { mode: ModeLike };
-  }
-  return {
-    ...options,
-    mode: { type: "regular" },
-  };
+export function selectModel(
+  client: { chat: (id: string) => unknown; responses: (id: string) => unknown },
+  wireApi: WireApi,
+  modelId: string,
+): unknown {
+  return wireApi === "chat" ? client.chat(modelId) : client.responses(modelId);
 }
 
 export function createLanguageModel(
   provider: string,
   modelId: string | undefined,
   options: CodexProviderOptions,
+  overrideWireApi?: WireApi,
 ): any {
   const config = loadCodexConfig(options);
   const resolvedModel = resolveModel(config.model, modelId, options.useCodexConfigModel);
@@ -36,15 +34,6 @@ export function createLanguageModel(
     headers: config.headers,
   });
 
-  const model: any =
-    config.wireApi === "chat" ? client.chat(resolvedModel) : client.responses(resolvedModel);
-
-  return {
-    specificationVersion: "v3",
-    provider,
-    modelId: resolvedModel,
-    supportedUrls: {},
-    doGenerate: (options: MaybeModeCallOptions) => model.doGenerate(ensureMode(options)),
-    doStream: (options: MaybeModeCallOptions) => model.doStream(ensureMode(options)),
-  };
+  const wireApi = overrideWireApi ?? config.wireApi;
+  return selectModel(client, wireApi, resolvedModel);
 }

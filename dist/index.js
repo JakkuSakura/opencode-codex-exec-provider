@@ -1,18 +1,16 @@
 import { createLanguageModel } from "./provider";
 export function createCodexProvider(options = {}) {
     const providerId = options.name ?? "codex-config";
-    const provider = {
-        specificationVersion: "v3",
-        languageModel(modelId) {
-            return createLanguageModel(providerId, modelId, options);
-        },
+    const callable = (modelId) => createLanguageModel(providerId, modelId, options);
+    callable.languageModel = (modelId) => createLanguageModel(providerId, modelId, options);
+    callable.chat = (modelId) => createLanguageModel(providerId, modelId, options, "chat");
+    callable.responses = (modelId) => createLanguageModel(providerId, modelId, options, "responses");
+    return Object.assign(callable, {
         embeddingModel() {
             throw new Error("codex-config does not support embeddings");
         },
         imageModel() {
             throw new Error("codex-config does not support images");
         },
-    };
-    const callable = (modelId) => provider.languageModel(modelId);
-    return Object.assign(callable, provider);
+    });
 }
