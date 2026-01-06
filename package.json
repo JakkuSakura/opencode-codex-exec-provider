@@ -1,0 +1,14 @@
+{
+  "name": "opencode-codex-exec-provider",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md"
+  ]
+}
