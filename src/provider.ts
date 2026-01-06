@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { createOpenAI } from "@ai-sdk/openai";
 import { applyQueryParams, loadCodexConfig, resolveModel, CodexProviderOptions } from "./config";
 
@@ -11,6 +13,9 @@ export function selectModel(
   return wireApi === "chat" ? client.chat(modelId) : client.responses(modelId);
 }
 
+const DEFAULT_CODEX_INSTRUCTIONS =
+  "You are Codex, based on GPT-5. You are running as a coding agent in the Codex CLI on a user's computer.";
+
 type ProviderOptions = {
   [provider: string]: Record<string, unknown>;
 };
@@ -23,8 +28,7 @@ type CallOptions = {
 
 function extractInstructions(prompt: any): string | undefined {
   if (!prompt || typeof prompt !== "object") return undefined;
-  if (prompt.type !== "messages") return undefined;
-  const messages = Array.isArray(prompt.messages) ? prompt.messages : [];
+  const messages = Array.isArray(prompt) ? prompt : [];
   const systemTexts = messages
     .filter((msg: any) => msg?.role === "system")
     .map((msg: any) => {
@@ -43,14 +47,38 @@ function extractInstructions(prompt: any): string | undefined {
   return systemTexts.join("\n");
 }
 
-export function withResponsesInstructions(options: CallOptions): CallOptions {
+function stripSystemMessages(prompt: any): any {
+  if (!Array.isArray(prompt)) return prompt;
+  return prompt.filter((msg: any) => msg?.role !== "system");
+}
+
+function loadCodexAgents(codexHome: string): string | undefined {
+  try {
+    const agentsPath = path.join(codexHome, "AGENTS.md");
+    if (!fs.existsSync(agentsPath)) return undefined;
+    const raw = fs.readFileSync(agentsPath, "utf8");
+    const trimmed = raw.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function withResponsesInstructions(options: CallOptions, codexHome: string): CallOptions {
   const existing = options.providerOptions?.openai?.instructions;
   if (typeof existing === "string" && existing.length > 0) return options;
 
-  const instructions = extractInstructions(options.prompt) ?? "You are a helpful assistant.";
+  const systemInstructions = extractInstructions(options.prompt);
+  const agentsInstructions = loadCodexAgents(codexHome);
+  const instructions =
+    systemInstructions ??
+    (agentsInstructions
+      ? `${DEFAULT_CODEX_INSTRUCTIONS}\n\n${agentsInstructions}`
+      : DEFAULT_CODEX_INSTRUCTIONS);
 
   return {
     ...options,
+    prompt: stripSystemMessages(options.prompt),
     providerOptions: {
       ...(options.providerOptions ?? {}),
       openai: {
@@ -61,10 +89,12 @@ export function withResponsesInstructions(options: CallOptions): CallOptions {
   };
 }
 
-function wrapResponsesModel(model: any): any {
+function wrapResponsesModel(model: any, codexHome: string): any {
   const wrapped = Object.create(model);
-  wrapped.doGenerate = (options: CallOptions) => model.doGenerate(withResponsesInstructions(options));
-  wrapped.doStream = (options: CallOptions) => model.doStream(withResponsesInstructions(options));
+  wrapped.doGenerate = (options: CallOptions) =>
+    model.doGenerate(withResponsesInstructions(options, codexHome));
+  wrapped.doStream = (options: CallOptions) =>
+    model.doStream(withResponsesInstructions(options, codexHome));
   return wrapped;
 }
 
@@ -94,7 +124,7 @@ export function createLanguageModel(
   const wireApi = overrideWireApi ?? config.wireApi;
   const model = selectModel(client, wireApi, resolvedModel);
   if (wireApi === "responses") {
-    return wrapResponsesModel(model);
+    return wrapResponsesModel(model, config.codexHome);
   }
   return model;
 }
