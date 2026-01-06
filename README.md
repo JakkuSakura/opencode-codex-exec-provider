@@ -14,7 +14,14 @@ OpenCode provider that reads `~/.codex/config.toml` and uses the configured Code
 git clone https://github.com/JakkuSakura/opencode-codex-provider
 ```
 
-4) Configure OpenCode to use the provider.
+4) Install dependencies (pnpm) and build if you plan to edit TypeScript:
+
+```bash
+pnpm install
+pnpm run build
+```
+
+5) Configure OpenCode to use the provider.
 Edit `~/.config/opencode/opencode.json`:
 
 ```json
@@ -49,9 +56,9 @@ Edit `~/.config/opencode/opencode.json`:
 }
 ```
 
-5) Restart OpenCode.
+6) Restart OpenCode.
 
-6) In the TUI, run `/models` and select `codex-config/default`.
+7) In the TUI, run `/models` and select `codex-config/default`.
 
 ## Notes
 

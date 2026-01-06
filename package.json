@@ -1,12 +1,21 @@
 {
   "name": "opencode-codex-provider",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "OpenCode provider that uses ~/.codex configuration",
   "type": "module",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "test": "tsx --test test/*.test.ts"
+  },
   "dependencies": {
     "@ai-sdk/openai": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.5.0"
   }
 }
