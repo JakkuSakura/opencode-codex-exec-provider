@@ -1,9 +1,12 @@
 {
-  "name": "opencode-codex-app-server-provider",
-  "version": "0.1.0",
-  "description": "OpenCode provider that talks to codex app-server over stdio",
+  "name": "opencode-codex-provider",
+  "version": "0.2.0",
+  "description": "OpenCode provider that uses ~/.codex configuration",
   "type": "module",
   "main": "index.js",
   "types": "index.d.ts",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@ai-sdk/openai": "^1.0.0"
+  }
 }
