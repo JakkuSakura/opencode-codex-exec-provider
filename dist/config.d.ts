@@ -22,6 +22,7 @@ export type CodexProviderOptions = {
     name?: string;
     codexHome?: string;
     useCodexConfigModel?: boolean;
+    instructions?: string;
 };
 export declare function loadCodexConfig(options?: CodexProviderOptions): CodexConfig;
 export declare function resolveModel(configModel: string, modelId: string | undefined, useCodexConfigModel: boolean | undefined): string;

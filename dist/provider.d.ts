@@ -12,6 +12,6 @@ type CallOptions = {
     providerOptions?: ProviderOptions;
     [key: string]: unknown;
 };
-export declare function withResponsesInstructions(options: CallOptions, codexHome: string): CallOptions;
+export declare function withResponsesInstructions(options: CallOptions, instructionsOverride?: string): CallOptions;
 export declare function createLanguageModel(provider: string, modelId: string | undefined, options: CodexProviderOptions, overrideWireApi?: WireApi): any;
 export {};
