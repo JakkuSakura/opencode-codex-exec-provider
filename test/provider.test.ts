@@ -123,3 +123,25 @@ test("normalizeResponsesOptions forces store true", () => {
   assert.equal((normalized as any).providerOptions.openai.store, true);
   assert.equal((normalized as any).providerOptions.openai.previousResponseId, undefined);
 });
+
+test("normalizeResponsesOptions strips openai item ids from prompt", () => {
+  const normalized = normalizeResponsesOptions(
+    {
+      prompt: [
+        {
+          role: "assistant",
+          content: [
+            {
+              type: "text",
+              text: "hi",
+              providerOptions: { openai: { itemId: "rs_123" } },
+            },
+          ],
+        },
+      ],
+    } as any,
+    { codexHome: os.tmpdir(), modelId: "gpt-5.2-codex" },
+  );
+  const itemId = (normalized as any).prompt[0].content[0].providerOptions.openai.itemId;
+  assert.equal(itemId, undefined);
+});

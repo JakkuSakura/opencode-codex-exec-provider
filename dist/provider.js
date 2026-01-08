@@ -104,6 +104,42 @@ function injectUserInstructions(prompt, userInstructions) {
     }
     return [message];
 }
+function stripOpenAIItemIds(prompt) {
+    if (!Array.isArray(prompt))
+        return prompt;
+    return prompt.map((msg) => {
+        if (!msg || typeof msg !== "object")
+            return msg;
+        const nextMsg = { ...msg };
+        if (nextMsg.providerOptions && typeof nextMsg.providerOptions === "object") {
+            const providerOptions = { ...nextMsg.providerOptions };
+            if (providerOptions.openai && typeof providerOptions.openai === "object") {
+                const openai = { ...providerOptions.openai };
+                delete openai.itemId;
+                providerOptions.openai = openai;
+            }
+            nextMsg.providerOptions = providerOptions;
+        }
+        if (Array.isArray(nextMsg.content)) {
+            nextMsg.content = nextMsg.content.map((part) => {
+                if (!part || typeof part !== "object")
+                    return part;
+                const nextPart = { ...part };
+                if (nextPart.providerOptions && typeof nextPart.providerOptions === "object") {
+                    const providerOptions = { ...nextPart.providerOptions };
+                    if (providerOptions.openai && typeof providerOptions.openai === "object") {
+                        const openai = { ...providerOptions.openai };
+                        delete openai.itemId;
+                        providerOptions.openai = openai;
+                    }
+                    nextPart.providerOptions = providerOptions;
+                }
+                return nextPart;
+            });
+        }
+        return nextMsg;
+    });
+}
 export function withResponsesInstructions(options, instructionOptions) {
     const existing = options.providerOptions?.openai?.instructions;
     if (typeof existing === "string" && existing.length > 0)
@@ -130,6 +166,7 @@ export function withResponsesInstructions(options, instructionOptions) {
 }
 export function normalizeResponsesOptions(options, instructionOptions) {
     const normalized = withResponsesInstructions(options, instructionOptions);
+    normalized.prompt = stripOpenAIItemIds(normalized.prompt);
     if ("maxOutputTokens" in normalized) {
         delete normalized.maxOutputTokens;
     }

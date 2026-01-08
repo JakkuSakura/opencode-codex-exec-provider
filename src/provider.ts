@@ -140,6 +140,40 @@ function injectUserInstructions(prompt: unknown, userInstructions: string): unkn
   return [message];
 }
 
+function stripOpenAIItemIds(prompt: unknown): unknown {
+  if (!Array.isArray(prompt)) return prompt;
+  return prompt.map((msg: any) => {
+    if (!msg || typeof msg !== "object") return msg;
+    const nextMsg = { ...msg };
+    if (nextMsg.providerOptions && typeof nextMsg.providerOptions === "object") {
+      const providerOptions = { ...nextMsg.providerOptions };
+      if (providerOptions.openai && typeof providerOptions.openai === "object") {
+        const openai = { ...providerOptions.openai };
+        delete openai.itemId;
+        providerOptions.openai = openai;
+      }
+      nextMsg.providerOptions = providerOptions;
+    }
+    if (Array.isArray(nextMsg.content)) {
+      nextMsg.content = nextMsg.content.map((part: any) => {
+        if (!part || typeof part !== "object") return part;
+        const nextPart = { ...part };
+        if (nextPart.providerOptions && typeof nextPart.providerOptions === "object") {
+          const providerOptions = { ...nextPart.providerOptions };
+          if (providerOptions.openai && typeof providerOptions.openai === "object") {
+            const openai = { ...providerOptions.openai };
+            delete openai.itemId;
+            providerOptions.openai = openai;
+          }
+          nextPart.providerOptions = providerOptions;
+        }
+        return nextPart;
+      });
+    }
+    return nextMsg;
+  });
+}
+
 export function withResponsesInstructions(
   options: CallOptions,
   instructionOptions: InstructionOptions,
@@ -175,6 +209,7 @@ export function normalizeResponsesOptions(
   instructionOptions: InstructionOptions,
 ): CallOptions {
   const normalized = withResponsesInstructions(options, instructionOptions);
+  normalized.prompt = stripOpenAIItemIds(normalized.prompt);
   if ("maxOutputTokens" in normalized) {
     delete (normalized as any).maxOutputTokens;
   }
