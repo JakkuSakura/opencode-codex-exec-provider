@@ -117,8 +117,9 @@ test("normalizeResponsesOptions drops maxOutputTokens", () => {
 
 test("normalizeResponsesOptions forces store true", () => {
   const normalized = normalizeResponsesOptions(
-    { prompt: [], providerOptions: { openai: { store: false } } } as any,
+    { prompt: [], providerOptions: { openai: { store: false, previousResponseId: "resp_1" } } } as any,
     { codexHome: os.tmpdir(), modelId: "gpt-5.2-codex" },
   );
   assert.equal((normalized as any).providerOptions.openai.store, true);
+  assert.equal((normalized as any).providerOptions.openai.previousResponseId, undefined);
 });

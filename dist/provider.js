@@ -133,12 +133,15 @@ export function normalizeResponsesOptions(options, instructionOptions) {
     if ("maxOutputTokens" in normalized) {
         delete normalized.maxOutputTokens;
     }
+    const openaiOptions = {
+        ...(normalized.providerOptions?.openai ?? {}),
+        store: true,
+    };
+    delete openaiOptions.previousResponseId;
+    delete openaiOptions.conversation;
     normalized.providerOptions = {
         ...(normalized.providerOptions ?? {}),
-        openai: {
-            ...(normalized.providerOptions?.openai ?? {}),
-            store: true,
-        },
+        openai: openaiOptions,
     };
     return normalized;
 }
