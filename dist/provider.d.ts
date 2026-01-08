@@ -22,5 +22,6 @@ type InstructionOptions = {
     tools?: unknown;
 };
 export declare function withResponsesInstructions(options: CallOptions, instructionOptions: InstructionOptions): CallOptions;
+export declare function normalizeResponsesOptions(options: CallOptions, instructionOptions: InstructionOptions): CallOptions;
 export declare function createLanguageModel(provider: string, modelId: string | undefined, options: CodexProviderOptions, overrideWireApi?: WireApi): any;
 export {};

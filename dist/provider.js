@@ -128,10 +128,17 @@ export function withResponsesInstructions(options, instructionOptions) {
         },
     };
 }
+export function normalizeResponsesOptions(options, instructionOptions) {
+    const normalized = withResponsesInstructions(options, instructionOptions);
+    if ("maxOutputTokens" in normalized) {
+        delete normalized.maxOutputTokens;
+    }
+    return normalized;
+}
 function wrapResponsesModel(model, instructionOptions) {
     const wrapped = Object.create(model);
-    wrapped.doGenerate = (options) => model.doGenerate(withResponsesInstructions(options, instructionOptions));
-    wrapped.doStream = (options) => model.doStream(withResponsesInstructions(options, instructionOptions));
+    wrapped.doGenerate = (options) => model.doGenerate(normalizeResponsesOptions(options, instructionOptions));
+    wrapped.doStream = (options) => model.doStream(normalizeResponsesOptions(options, instructionOptions));
     return wrapped;
 }
 export function createLanguageModel(provider, modelId, options, overrideWireApi) {

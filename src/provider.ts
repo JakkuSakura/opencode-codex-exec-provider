@@ -170,12 +170,23 @@ export function withResponsesInstructions(
   };
 }
 
+export function normalizeResponsesOptions(
+  options: CallOptions,
+  instructionOptions: InstructionOptions,
+): CallOptions {
+  const normalized = withResponsesInstructions(options, instructionOptions);
+  if ("maxOutputTokens" in normalized) {
+    delete (normalized as any).maxOutputTokens;
+  }
+  return normalized;
+}
+
 function wrapResponsesModel(model: any, instructionOptions: InstructionOptions): any {
   const wrapped = Object.create(model);
   wrapped.doGenerate = (options: CallOptions) =>
-    model.doGenerate(withResponsesInstructions(options, instructionOptions));
+    model.doGenerate(normalizeResponsesOptions(options, instructionOptions));
   wrapped.doStream = (options: CallOptions) =>
-    model.doStream(withResponsesInstructions(options, instructionOptions));
+    model.doStream(normalizeResponsesOptions(options, instructionOptions));
   return wrapped;
 }
 

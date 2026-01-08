@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { selectModel, withResponsesInstructions } from "../src/provider";
+import { normalizeResponsesOptions, selectModel, withResponsesInstructions } from "../src/provider";
 
 test("selectModel uses chat when wire_api is chat", () => {
   const calls: string[] = [];
@@ -105,4 +105,12 @@ test("withResponsesInstructions uses bundled codex prompt for codex models", () 
   });
   const instr = (next.providerOptions as any).openai.instructions as string;
   assert.ok(instr.startsWith("You are Codex, based on GPT-5."));
+});
+
+test("normalizeResponsesOptions drops maxOutputTokens", () => {
+  const normalized = normalizeResponsesOptions(
+    { prompt: [], maxOutputTokens: 123 } as any,
+    { codexHome: os.tmpdir(), modelId: "gpt-5.2-codex" },
+  );
+  assert.equal((normalized as any).maxOutputTokens, undefined);
 });
