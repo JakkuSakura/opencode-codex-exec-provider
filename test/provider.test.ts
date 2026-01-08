@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import os from "node:os";
+import path from "node:path";
 import { selectModel, withResponsesInstructions } from "../src/provider";
 
 test("selectModel uses chat when wire_api is chat", () => {
@@ -48,7 +50,7 @@ test("withResponsesInstructions preserves existing instructions", () => {
     },
   };
 
-  const next = withResponsesInstructions(options as any);
+  const next = withResponsesInstructions(options as any, { codexHome: os.tmpdir() });
   assert.equal((next.providerOptions as any).openai.instructions, "Keep this.");
 });
 
@@ -57,7 +59,35 @@ test("withResponsesInstructions uses override when provided", () => {
     prompt: [{ role: "user", content: "hi" }],
   };
 
-  const next = withResponsesInstructions(options as any, "Override instructions.");
+  const next = withResponsesInstructions(options as any, {
+    codexHome: os.tmpdir(),
+    instructions: "Override instructions.",
+  });
   const instr = (next.providerOptions as any).openai.instructions as string;
   assert.equal(instr, "Override instructions.");
+});
+
+test("withResponsesInstructions loads instructions from file", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "codex-instructions-"));
+  const file = path.join(dir, "base.md");
+  fs.writeFileSync(file, "Base instructions from file.");
+
+  const next = withResponsesInstructions({ prompt: [] } as any, {
+    codexHome: dir,
+    instructionsFile: file,
+  });
+  const instr = (next.providerOptions as any).openai.instructions as string;
+  assert.equal(instr, "Base instructions from file.");
+});
+
+test("withResponsesInstructions injects user instructions from AGENTS", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "codex-agents-"));
+  fs.writeFileSync(path.join(dir, "AGENTS.md"), "Use these rules.");
+
+  const next = withResponsesInstructions({ prompt: [{ role: "user", content: "hi" }] } as any, {
+    codexHome: dir,
+  });
+  const prompt = next.prompt as any[];
+  assert.equal(prompt[0].role, "user");
+  assert.ok(prompt[0].content[0].text.includes("<user_instructions>"));
 });

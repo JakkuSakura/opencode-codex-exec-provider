@@ -30,6 +30,9 @@ export type CodexProviderOptions = {
   codexHome?: string;
   useCodexConfigModel?: boolean;
   instructions?: string;
+  instructionsFile?: string;
+  userInstructionsFile?: string;
+  includeUserInstructions?: boolean;
 };
 
 function isProviderConfig(value: TomlTable | undefined): ProviderConfig {

@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { createOpenAI } from "@ai-sdk/openai";
 import { applyQueryParams, loadCodexConfig, resolveModel, CodexProviderOptions } from "./config";
 
@@ -24,17 +26,89 @@ type CallOptions = {
   [key: string]: unknown;
 };
 
+type InstructionOptions = {
+  codexHome: string;
+  instructions?: string;
+  instructionsFile?: string;
+  userInstructionsFile?: string;
+  includeUserInstructions?: boolean;
+};
+
+function readFileTrimmed(filePath: string): string | undefined {
+  try {
+    const raw = fs.readFileSync(filePath, "utf8");
+    const trimmed = raw.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function resolveBaseInstructions(opts: InstructionOptions): string {
+  const fromFile =
+    opts.instructionsFile && path.isAbsolute(opts.instructionsFile)
+      ? readFileTrimmed(opts.instructionsFile)
+      : opts.instructionsFile
+        ? readFileTrimmed(path.join(opts.codexHome, opts.instructionsFile))
+        : undefined;
+  const fromInline = opts.instructions?.trim();
+  return fromFile ?? fromInline ?? DEFAULT_CODEX_INSTRUCTIONS;
+}
+
+function resolveUserInstructions(opts: InstructionOptions): string | undefined {
+  if (opts.includeUserInstructions === false) return undefined;
+  const fromFile =
+    opts.userInstructionsFile && path.isAbsolute(opts.userInstructionsFile)
+      ? readFileTrimmed(opts.userInstructionsFile)
+      : opts.userInstructionsFile
+        ? readFileTrimmed(path.join(opts.codexHome, opts.userInstructionsFile))
+        : undefined;
+  if (fromFile) return fromFile;
+  return readFileTrimmed(path.join(opts.codexHome, "AGENTS.md"));
+}
+
+function hasUserInstructionsTag(prompt: unknown): boolean {
+  if (!Array.isArray(prompt)) return false;
+  return prompt.some((msg: any) => {
+    if (msg?.role !== "user") return false;
+    const content = msg?.content;
+    if (typeof content === "string") return content.includes("<user_instructions>");
+    if (Array.isArray(content)) {
+      return content.some((part: any) => part?.type === "text" && String(part.text).includes("<user_instructions>"));
+    }
+    return false;
+  });
+}
+
+function injectUserInstructions(prompt: unknown, userInstructions: string): unknown {
+  const wrapped = `<user_instructions>\n${userInstructions}\n</user_instructions>`;
+  const message = {
+    role: "user",
+    content: [{ type: "text", text: wrapped }],
+  };
+  if (Array.isArray(prompt)) {
+    return [message, ...prompt];
+  }
+  return [message];
+}
+
 export function withResponsesInstructions(
   options: CallOptions,
-  instructionsOverride?: string,
+  instructionOptions: InstructionOptions,
 ): CallOptions {
   const existing = options.providerOptions?.openai?.instructions;
   if (typeof existing === "string" && existing.length > 0) return options;
 
-  const instructions = instructionsOverride?.trim() || DEFAULT_CODEX_INSTRUCTIONS;
+  const instructions = resolveBaseInstructions(instructionOptions);
+  const userInstructions = resolveUserInstructions(instructionOptions);
+  const nextPrompt =
+    userInstructions && !hasUserInstructionsTag(options.prompt)
+      ? injectUserInstructions(options.prompt, userInstructions)
+      : options.prompt;
 
   return {
     ...options,
+    prompt: nextPrompt,
     providerOptions: {
       ...(options.providerOptions ?? {}),
       openai: {
@@ -45,12 +119,12 @@ export function withResponsesInstructions(
   };
 }
 
-function wrapResponsesModel(model: any, instructionsOverride?: string): any {
+function wrapResponsesModel(model: any, instructionOptions: InstructionOptions): any {
   const wrapped = Object.create(model);
   wrapped.doGenerate = (options: CallOptions) =>
-    model.doGenerate(withResponsesInstructions(options, instructionsOverride));
+    model.doGenerate(withResponsesInstructions(options, instructionOptions));
   wrapped.doStream = (options: CallOptions) =>
-    model.doStream(withResponsesInstructions(options, instructionsOverride));
+    model.doStream(withResponsesInstructions(options, instructionOptions));
   return wrapped;
 }
 
@@ -80,7 +154,13 @@ export function createLanguageModel(
   const wireApi = overrideWireApi ?? config.wireApi;
   const model = selectModel(client, wireApi, resolvedModel);
   if (wireApi === "responses") {
-    return wrapResponsesModel(model, options.instructions);
+    return wrapResponsesModel(model, {
+      codexHome: config.codexHome,
+      instructions: options.instructions,
+      instructionsFile: options.instructionsFile,
+      userInstructionsFile: options.userInstructionsFile,
+      includeUserInstructions: options.includeUserInstructions,
+    });
   }
   return model;
 }
