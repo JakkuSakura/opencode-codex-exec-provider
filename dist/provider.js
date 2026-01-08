@@ -135,9 +135,92 @@ export function normalizeResponsesOptions(options, instructionOptions) {
     }
     return normalized;
 }
+async function collectStreamResult(stream) {
+    const reader = stream.getReader();
+    const content = [];
+    const textById = new Map();
+    const reasoningById = new Map();
+    let finishReason = "unknown";
+    let usage = { inputTokens: undefined, outputTokens: undefined, totalTokens: undefined };
+    let providerMetadata = undefined;
+    let warnings = [];
+    let responseMetadata = undefined;
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done)
+            break;
+        if (!value || typeof value !== "object")
+            continue;
+        switch (value.type) {
+            case "stream-start":
+                warnings = value.warnings ?? [];
+                break;
+            case "text-start":
+                textById.set(value.id, "");
+                break;
+            case "text-delta":
+                textById.set(value.id, (textById.get(value.id) ?? "") + (value.delta ?? ""));
+                break;
+            case "text-end": {
+                const text = textById.get(value.id) ?? "";
+                content.push({ type: "text", text });
+                textById.delete(value.id);
+                break;
+            }
+            case "reasoning-start":
+                reasoningById.set(value.id, "");
+                break;
+            case "reasoning-delta":
+                reasoningById.set(value.id, (reasoningById.get(value.id) ?? "") + (value.delta ?? ""));
+                break;
+            case "reasoning-end": {
+                const text = reasoningById.get(value.id) ?? "";
+                content.push({ type: "reasoning", text });
+                reasoningById.delete(value.id);
+                break;
+            }
+            case "tool-call":
+            case "tool-result":
+            case "file":
+            case "source":
+                content.push(value);
+                break;
+            case "response-metadata":
+                responseMetadata = { ...value };
+                delete responseMetadata.type;
+                break;
+            case "finish":
+                finishReason = value.finishReason ?? finishReason;
+                usage = value.usage ?? usage;
+                providerMetadata = value.providerMetadata ?? providerMetadata;
+                break;
+            case "error":
+                throw value.error;
+            default:
+                break;
+        }
+    }
+    return { content, finishReason, usage, providerMetadata, warnings, responseMetadata };
+}
 function wrapResponsesModel(model, instructionOptions) {
     const wrapped = Object.create(model);
-    wrapped.doGenerate = (options) => model.doGenerate(normalizeResponsesOptions(options, instructionOptions));
+    wrapped.doGenerate = async (options) => {
+        const normalized = normalizeResponsesOptions(options, instructionOptions);
+        const { stream, request, response } = await model.doStream(normalized);
+        const collected = await collectStreamResult(stream);
+        return {
+            content: collected.content,
+            finishReason: collected.finishReason,
+            usage: collected.usage,
+            providerMetadata: collected.providerMetadata,
+            request,
+            response: {
+                ...collected.responseMetadata,
+                headers: response?.headers,
+            },
+            warnings: collected.warnings,
+        };
+    };
     wrapped.doStream = (options) => model.doStream(normalizeResponsesOptions(options, instructionOptions));
     return wrapped;
 }
