@@ -23,11 +23,28 @@ export type CodexConfig = {
   queryParams?: Record<string, string | number | boolean> | null;
 };
 
+type ServerConfig = {
+  api_key?: string;
+  base_url?: string;
+};
+
+type ModelServerOverride = {
+  servers?: Record<string, ServerConfig>;
+  server?: string;
+};
+
+type PricingConfig = {
+  input_per_mtoken?: number;
+  output_per_mtoken?: number;
+};
+
 export type CodexProviderOptions = {
   name?: string;
   codexHome?: string;
-  useCodexConfigModel?: boolean;
-  apiKeys?: Record<string, string>;
+  servers?: Record<string, ServerConfig>;
+  server?: string;
+  modelServers?: Record<string, ModelServerOverride>;
+  pricing?: PricingConfig;
   instructions?: string;
   instructionsFile?: string;
   userInstructionsFile?: string;
@@ -73,13 +90,23 @@ function resolveApiKey(
   return null;
 }
 
-function resolveApiKeyOverride(
-  providerId: string,
-  options: CodexProviderOptions,
-): string | null {
-  if (options.useCodexConfigModel !== false) return null;
-  if (!options.apiKeys) return null;
-  return options.apiKeys[providerId] ?? null;
+function buildServersFromCodex(
+  providerTable: TomlTable,
+  auth: Record<string, string>,
+): Record<string, ServerConfig> {
+  const servers: Record<string, ServerConfig> = {};
+  for (const [providerId, value] of Object.entries(providerTable)) {
+    const providerConfig = isProviderConfig(value as TomlTable | undefined);
+    const baseUrl = resolveBaseUrl(providerId, providerConfig);
+    const requiresOpenaiAuth = resolveRequiresOpenaiAuth(providerId, providerConfig);
+    const envKey = providerConfig.env_key ?? (requiresOpenaiAuth ? "OPENAI_API_KEY" : null);
+    const apiKey = resolveApiKey(requiresOpenaiAuth, envKey, auth);
+    servers[providerId] = {
+      api_key: apiKey ?? undefined,
+      base_url: baseUrl,
+    };
+  }
+  return servers;
 }
 
 export function loadCodexConfig(options: CodexProviderOptions = {}): CodexConfig {
@@ -97,15 +124,28 @@ export function loadCodexConfig(options: CodexProviderOptions = {}): CodexConfig
   const providerId = (config.model_provider as string | undefined) ?? "openai";
   const model = (config.model as string | undefined) ?? "gpt-5-codex";
   const providerTable = (config.model_providers as TomlTable | undefined) ?? {};
-  const providerConfig = isProviderConfig(providerTable[providerId] as TomlTable | undefined);
 
-  const baseUrl = resolveBaseUrl(providerId, providerConfig);
-  const requiresOpenaiAuth = resolveRequiresOpenaiAuth(providerId, providerConfig);
-  const envKey = providerConfig.env_key ?? (requiresOpenaiAuth ? "OPENAI_API_KEY" : null);
-  const apiKey = resolveApiKeyOverride(providerId, options) ?? resolveApiKey(requiresOpenaiAuth, envKey, auth);
+  const codexServers = buildServersFromCodex(providerTable, auth);
+  const mergedServers = { ...codexServers, ...(options.servers ?? {}) };
 
-  const headers: Record<string, string> = { ...(providerConfig.http_headers ?? {}) };
-  const envHeaders = providerConfig.env_http_headers ?? {};
+  const modelOverride = options.modelServers?.[model] ?? {};
+  const modelServers = modelOverride.servers
+    ? { ...mergedServers, ...modelOverride.servers }
+    : mergedServers;
+
+  const selectedServer = modelOverride.server ?? options.server ?? providerId;
+  const selected = modelServers[selectedServer];
+  const selectedProviderConfig = isProviderConfig(
+    providerTable[selectedServer] as TomlTable | undefined,
+  );
+
+  const baseUrl = selected?.base_url ?? resolveBaseUrl(selectedServer, selectedProviderConfig);
+  const requiresOpenaiAuth = resolveRequiresOpenaiAuth(selectedServer, selectedProviderConfig);
+  const envKey = selectedProviderConfig.env_key ?? (requiresOpenaiAuth ? "OPENAI_API_KEY" : null);
+  const apiKey = selected?.api_key ?? resolveApiKey(requiresOpenaiAuth, envKey, auth);
+
+  const headers: Record<string, string> = { ...(selectedProviderConfig.http_headers ?? {}) };
+  const envHeaders = selectedProviderConfig.env_http_headers ?? {};
   for (const [header, envVar] of Object.entries(envHeaders)) {
     const value = process.env[envVar];
     if (value && value.trim()) headers[header] = value;
@@ -113,21 +153,19 @@ export function loadCodexConfig(options: CodexProviderOptions = {}): CodexConfig
 
   return {
     codexHome,
-    providerId,
+    providerId: selectedServer,
     model,
     baseUrl,
     apiKey,
     headers,
-    queryParams: providerConfig.query_params ?? null,
+    queryParams: selectedProviderConfig.query_params ?? null,
   };
 }
 
 export function resolveModel(
   configModel: string,
   modelId: string | undefined,
-  useCodexConfigModel: boolean | undefined,
 ): string {
-  if (useCodexConfigModel !== false) return configModel;
   if (modelId && modelId !== "default") return modelId;
   return configModel;
 }

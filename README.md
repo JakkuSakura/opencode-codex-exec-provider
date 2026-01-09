@@ -38,7 +38,26 @@ Edit `~/.config/opencode/opencode.json`:
       "name": "Codex",
       "options": {
         "codexHome": "~/.codex",
-        "useCodexConfigModel": true
+        "servers": {
+          "server-1": {
+            "api_key": "sk-...",
+            "base_url": "https://api.openai.com/v1"
+          },
+          "server-2": {
+            "api_key": "sk-...",
+            "base_url": "https://api.example.com/v1"
+          }
+        },
+        "server": "server-1",
+        "modelServers": {
+          "gpt-5.2-codex": {
+            "server": "server-2"
+          }
+        },
+        "pricing": {
+          "input_per_mtoken": 5.0,
+          "output_per_mtoken": 15.0
+        }
       },
       "models": {
         "default": {
@@ -46,13 +65,211 @@ Edit `~/.config/opencode/opencode.json`:
           "name": "Codex (from ~/.codex)",
           "family": "codex",
           "reasoning": true,
-          "limit": { "context": 272000, "output": 128000 },
+          "limit": { "context": 400000, "output": 128000 },
           "modalities": { "input": ["text", "image"], "output": ["text"] },
           "options": {
             "reasoningEffort": "medium",
             "reasoningSummary": "auto",
             "textVerbosity": "medium"
           }
+        },
+        "gpt-5.2-none": {
+          "id": "gpt-5.2",
+          "name": "GPT-5.2 (none)",
+          "family": "gpt-5.2",
+          "reasoning": false,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "none" }
+        },
+        "gpt-5.2-low": {
+          "id": "gpt-5.2",
+          "name": "GPT-5.2 (low)",
+          "family": "gpt-5.2",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "low" }
+        },
+        "gpt-5.2-medium": {
+          "id": "gpt-5.2",
+          "name": "GPT-5.2 (medium)",
+          "family": "gpt-5.2",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "medium" }
+        },
+        "gpt-5.2-high": {
+          "id": "gpt-5.2",
+          "name": "GPT-5.2 (high)",
+          "family": "gpt-5.2",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "high" }
+        },
+        "gpt-5.2-xhigh": {
+          "id": "gpt-5.2",
+          "name": "GPT-5.2 (xhigh)",
+          "family": "gpt-5.2",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "xhigh" }
+        },
+        "gpt-5.2-codex-low": {
+          "id": "gpt-5.2-codex",
+          "name": "GPT-5.2 Codex (low)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "low" }
+        },
+        "gpt-5.2-codex-medium": {
+          "id": "gpt-5.2-codex",
+          "name": "GPT-5.2 Codex (medium)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "medium" }
+        },
+        "gpt-5.2-codex-high": {
+          "id": "gpt-5.2-codex",
+          "name": "GPT-5.2 Codex (high)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "high" }
+        },
+        "gpt-5.2-codex-xhigh": {
+          "id": "gpt-5.2-codex",
+          "name": "GPT-5.2 Codex (xhigh)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "xhigh" }
+        },
+        "gpt-5.1-codex-max-low": {
+          "id": "gpt-5.1-codex-max",
+          "name": "GPT-5.1 Codex Max (low)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "low" }
+        },
+        "gpt-5.1-codex-max-medium": {
+          "id": "gpt-5.1-codex-max",
+          "name": "GPT-5.1 Codex Max (medium)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "medium" }
+        },
+        "gpt-5.1-codex-max-high": {
+          "id": "gpt-5.1-codex-max",
+          "name": "GPT-5.1 Codex Max (high)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "high" }
+        },
+        "gpt-5.1-codex-max-xhigh": {
+          "id": "gpt-5.1-codex-max",
+          "name": "GPT-5.1 Codex Max (xhigh)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "xhigh" }
+        },
+        "gpt-5.1-codex-low": {
+          "id": "gpt-5.1-codex",
+          "name": "GPT-5.1 Codex (low)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "low" }
+        },
+        "gpt-5.1-codex-medium": {
+          "id": "gpt-5.1-codex",
+          "name": "GPT-5.1 Codex (medium)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "medium" }
+        },
+        "gpt-5.1-codex-high": {
+          "id": "gpt-5.1-codex",
+          "name": "GPT-5.1 Codex (high)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "high" }
+        },
+        "gpt-5.1-codex-mini-medium": {
+          "id": "gpt-5.1-codex-mini",
+          "name": "GPT-5.1 Codex Mini (medium)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 100000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "medium" }
+        },
+        "gpt-5.1-codex-mini-high": {
+          "id": "gpt-5.1-codex-mini",
+          "name": "GPT-5.1 Codex Mini (high)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 100000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "high" }
+        },
+        "gpt-5.1-none": {
+          "id": "gpt-5.1",
+          "name": "GPT-5.1 (none)",
+          "family": "gpt-5.1",
+          "reasoning": false,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "none" }
+        },
+        "gpt-5.1-low": {
+          "id": "gpt-5.1",
+          "name": "GPT-5.1 (low)",
+          "family": "gpt-5.1",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "low" }
+        },
+        "gpt-5.1-medium": {
+          "id": "gpt-5.1",
+          "name": "GPT-5.1 (medium)",
+          "family": "gpt-5.1",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "medium" }
+        },
+        "gpt-5.1-high": {
+          "id": "gpt-5.1",
+          "name": "GPT-5.1 (high)",
+          "family": "gpt-5.1",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "high" }
         }
       }
     }
@@ -112,6 +329,12 @@ OpenCode auto-loads local plugins from:
 
 See https://opencode.ai/docs/plugins/ for details.
 
+## Update version
+
+1) Bump the version in `package.json`.
+2) Run `pnpm run build` to update `dist/`.
+3) Commit and tag the release (`git tag vX.Y.Z`).
+
 ## Notes
 
 - The provider reads `~/.codex/config.toml` on each request and uses the selected `model_provider` and `model`.
@@ -130,12 +353,10 @@ See https://opencode.ai/docs/plugins/ for details.
 ## Options
 
 - `codexHome`: path to Codex home (default: `~/.codex`)
-- `useCodexConfigModel`: when true, always use the model from `~/.codex/config.toml`
-- `apiKeys`: when `useCodexConfigModel` is false, an optional map of provider id → API key to override `~/.codex/auth.json`
-
-### useCodexConfigModel = false
-
-When `useCodexConfigModel` is false, OpenCode controls the model selection. The provider will use the model passed by OpenCode (or the default `codex/default`), and ignore `model` in `~/.codex/config.toml`.
+- `servers`: optional map of server name → { `api_key`, `base_url` }
+- `server`: selects which server entry to use from `servers` (if omitted, defaults to the server from `~/.codex/config.toml`)
+- `modelServers`: per-model override of `servers`/`server`
+- `pricing`: optional per‑million token cost to compute `providerMetadata.costUsd`
 
 **Example (use OpenCode model selection):**
 
@@ -149,10 +370,25 @@ When `useCodexConfigModel` is false, OpenCode controls the model selection. The 
       "name": "Codex",
       "options": {
         "codexHome": "~/.codex",
-        "useCodexConfigModel": false,
-        "apiKeys": {
-          "openai": "sk-...",
-          "tabcode": "sk-..."
+        "servers": {
+          "server-1": {
+            "api_key": "sk-...",
+            "base_url": "https://api.openai.com/v1"
+          },
+          "server-2": {
+            "api_key": "sk-...",
+            "base_url": "https://api.example.com/v1"
+          }
+        },
+        "server": "server-1",
+        "modelServers": {
+          "gpt-5.2-codex": {
+            "server": "server-2"
+          }
+        },
+        "pricing": {
+          "input_per_mtoken": 5.0,
+          "output_per_mtoken": 15.0
         }
       },
       "models": {
@@ -161,16 +397,206 @@ When `useCodexConfigModel` is false, OpenCode controls the model selection. The 
           "name": "Codex (from ~/.codex)",
           "family": "codex",
           "reasoning": true,
-          "limit": { "context": 272000, "output": 128000 },
+          "limit": { "context": 400000, "output": 128000 },
           "modalities": { "input": ["text", "image"], "output": ["text"] }
         },
-        "fast": {
-          "id": "gpt-4.1-mini",
-          "name": "GPT-4.1 Mini",
-          "family": "gpt-4.1",
+        "gpt-5.2-none": {
+          "id": "gpt-5.2",
+          "name": "GPT-5.2 (none)",
+          "family": "gpt-5.2",
           "reasoning": false,
-          "limit": { "context": 128000, "output": 16384 },
-          "modalities": { "input": ["text", "image"], "output": ["text"] }
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "none" }
+        },
+        "gpt-5.2-low": {
+          "id": "gpt-5.2",
+          "name": "GPT-5.2 (low)",
+          "family": "gpt-5.2",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "low" }
+        },
+        "gpt-5.2-medium": {
+          "id": "gpt-5.2",
+          "name": "GPT-5.2 (medium)",
+          "family": "gpt-5.2",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "medium" }
+        },
+        "gpt-5.2-high": {
+          "id": "gpt-5.2",
+          "name": "GPT-5.2 (high)",
+          "family": "gpt-5.2",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "high" }
+        },
+        "gpt-5.2-xhigh": {
+          "id": "gpt-5.2",
+          "name": "GPT-5.2 (xhigh)",
+          "family": "gpt-5.2",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "xhigh" }
+        },
+        "gpt-5.2-codex-low": {
+          "id": "gpt-5.2-codex",
+          "name": "GPT-5.2 Codex (low)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "low" }
+        },
+        "gpt-5.2-codex-medium": {
+          "id": "gpt-5.2-codex",
+          "name": "GPT-5.2 Codex (medium)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "medium" }
+        },
+        "gpt-5.2-codex-high": {
+          "id": "gpt-5.2-codex",
+          "name": "GPT-5.2 Codex (high)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "high" }
+        },
+        "gpt-5.2-codex-xhigh": {
+          "id": "gpt-5.2-codex",
+          "name": "GPT-5.2 Codex (xhigh)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "xhigh" }
+        },
+        "gpt-5.1-codex-max-low": {
+          "id": "gpt-5.1-codex-max",
+          "name": "GPT-5.1 Codex Max (low)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "low" }
+        },
+        "gpt-5.1-codex-max-medium": {
+          "id": "gpt-5.1-codex-max",
+          "name": "GPT-5.1 Codex Max (medium)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "medium" }
+        },
+        "gpt-5.1-codex-max-high": {
+          "id": "gpt-5.1-codex-max",
+          "name": "GPT-5.1 Codex Max (high)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "high" }
+        },
+        "gpt-5.1-codex-max-xhigh": {
+          "id": "gpt-5.1-codex-max",
+          "name": "GPT-5.1 Codex Max (xhigh)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "xhigh" }
+        },
+        "gpt-5.1-codex-low": {
+          "id": "gpt-5.1-codex",
+          "name": "GPT-5.1 Codex (low)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "low" }
+        },
+        "gpt-5.1-codex-medium": {
+          "id": "gpt-5.1-codex",
+          "name": "GPT-5.1 Codex (medium)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "medium" }
+        },
+        "gpt-5.1-codex-high": {
+          "id": "gpt-5.1-codex",
+          "name": "GPT-5.1 Codex (high)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "high" }
+        },
+        "gpt-5.1-codex-mini-medium": {
+          "id": "gpt-5.1-codex-mini",
+          "name": "GPT-5.1 Codex Mini (medium)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 100000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "medium" }
+        },
+        "gpt-5.1-codex-mini-high": {
+          "id": "gpt-5.1-codex-mini",
+          "name": "GPT-5.1 Codex Mini (high)",
+          "family": "codex",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 100000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "high" }
+        },
+        "gpt-5.1-none": {
+          "id": "gpt-5.1",
+          "name": "GPT-5.1 (none)",
+          "family": "gpt-5.1",
+          "reasoning": false,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "none" }
+        },
+        "gpt-5.1-low": {
+          "id": "gpt-5.1",
+          "name": "GPT-5.1 (low)",
+          "family": "gpt-5.1",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "low" }
+        },
+        "gpt-5.1-medium": {
+          "id": "gpt-5.1",
+          "name": "GPT-5.1 (medium)",
+          "family": "gpt-5.1",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "medium" }
+        },
+        "gpt-5.1-high": {
+          "id": "gpt-5.1",
+          "name": "GPT-5.1 (high)",
+          "family": "gpt-5.1",
+          "reasoning": true,
+          "limit": { "context": 400000, "output": 128000 },
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "options": { "reasoningEffort": "high" }
         }
       }
     }

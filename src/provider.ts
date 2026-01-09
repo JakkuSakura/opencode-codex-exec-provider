@@ -35,6 +35,10 @@ type InstructionOptions = {
   userInstructionsFile?: string;
   includeUserInstructions?: boolean;
   tools?: unknown;
+  pricing?: {
+    input_per_mtoken?: number;
+    output_per_mtoken?: number;
+  };
 };
 
 function readFileTrimmed(filePath: string): string | undefined {
@@ -313,17 +317,33 @@ async function collectStreamResult(stream: ReadableStream<any>) {
   return { content, finishReason, usage, providerMetadata, warnings, responseMetadata };
 }
 
+function computeCostUsd(usage: any, pricing?: InstructionOptions["pricing"]): number | undefined {
+  if (!pricing) return undefined;
+  const inputRate = pricing.input_per_mtoken ?? 0;
+  const outputRate = pricing.output_per_mtoken ?? 0;
+  if (inputRate <= 0 && outputRate <= 0) return undefined;
+  const inputTokens = Number(usage?.inputTokens ?? 0);
+  const outputTokens = Number(usage?.outputTokens ?? 0);
+  const cost = (inputTokens / 1_000_000) * inputRate + (outputTokens / 1_000_000) * outputRate;
+  return Number.isFinite(cost) ? cost : undefined;
+}
+
 function wrapResponsesModel(model: any, instructionOptions: InstructionOptions): any {
   const wrapped = Object.create(model);
   wrapped.doGenerate = async (options: CallOptions) => {
     const normalized = normalizeResponsesOptions(options, instructionOptions);
     const { stream, request, response } = await model.doStream(normalized);
     const collected = await collectStreamResult(stream);
+    const costUsd = computeCostUsd(collected.usage, instructionOptions.pricing);
+    const providerMetadata = {
+      ...(collected.providerMetadata ?? {}),
+      ...(costUsd !== undefined ? { costUsd } : {}),
+    };
     return {
       content: collected.content,
       finishReason: collected.finishReason,
       usage: collected.usage,
-      providerMetadata: collected.providerMetadata,
+      providerMetadata,
       request,
       response: {
         ...collected.responseMetadata,
@@ -342,7 +362,7 @@ export function createLanguageModel(
   options: CodexProviderOptions,
 ): any {
   const config = loadCodexConfig(options);
-  const resolvedModel = resolveModel(config.model, modelId, options.useCodexConfigModel);
+  const resolvedModel = resolveModel(config.model, modelId);
 
   if (!resolvedModel) {
     throw new Error("No model configured (set model in ~/.codex/config.toml or OpenCode config)");
@@ -366,5 +386,6 @@ export function createLanguageModel(
     instructionsFile: options.instructionsFile,
     userInstructionsFile: options.userInstructionsFile,
     includeUserInstructions: options.includeUserInstructions,
+    pricing: options.pricing,
   });
 }
