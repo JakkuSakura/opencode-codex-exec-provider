@@ -15,8 +15,8 @@ export function createCodexProvider(options: CodexProviderOptions = {}): any {
     embeddingModel() {
       throw new Error("codex-config does not support embeddings");
     },
-    imageModel() {
-      throw new Error("codex-config does not support images");
+    imageModel(modelId?: string) {
+      return createLanguageModel(providerId, modelId, options, "responses");
     },
   });
 }

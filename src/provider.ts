@@ -174,6 +174,29 @@ function stripOpenAIItemIds(prompt: unknown): unknown {
   });
 }
 
+function normalizeOpenAIResponsesPrompt(prompt: unknown): unknown {
+  if (!Array.isArray(prompt)) return prompt;
+  return prompt.map((msg: any) => {
+    if (!msg || typeof msg !== "object") return msg;
+    if (!Array.isArray(msg.content)) return msg;
+    const nextMsg = { ...msg };
+    nextMsg.content = msg.content.map((part: any) => {
+      if (!part || typeof part !== "object") return part;
+      if (part.type === "input_text" && typeof part.text === "string") {
+        return { ...part, type: "text" };
+      }
+      if (part.type === "input_image") {
+        const { image_url, file_id, ...rest } = part as any;
+        const image = image_url ?? file_id;
+        if (!image) return part;
+        return { ...rest, type: "image", image };
+      }
+      return part;
+    });
+    return nextMsg;
+  });
+}
+
 export function withResponsesInstructions(
   options: CallOptions,
   instructionOptions: InstructionOptions,
@@ -209,7 +232,7 @@ export function normalizeResponsesOptions(
   instructionOptions: InstructionOptions,
 ): CallOptions {
   const normalized = withResponsesInstructions(options, instructionOptions);
-  normalized.prompt = stripOpenAIItemIds(normalized.prompt);
+  normalized.prompt = normalizeOpenAIResponsesPrompt(stripOpenAIItemIds(normalized.prompt));
   if ("maxOutputTokens" in normalized) {
     delete (normalized as any).maxOutputTokens;
   }
