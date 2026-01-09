@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createOpenAI } from "@ai-sdk/openai";
-import { applyQueryParams, loadCodexConfig, resolveModel, CodexProviderOptions } from "./config";
+import { applyQueryParams, loadCodexConfig, resolveModel, CodexProviderOptions } from "./config.js";
 
 type WireApi = "chat" | "responses";
 

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { parseToml, TomlTable } from "./toml";
+import { parseToml, TomlTable } from "./toml.js";
 
 export type ProviderConfig = {
   name?: string;

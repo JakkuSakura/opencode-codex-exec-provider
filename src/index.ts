@@ -1,5 +1,5 @@
-import { createLanguageModel } from "./provider";
-import type { CodexProviderOptions } from "./config";
+import { createLanguageModel } from "./provider.js";
+import type { CodexProviderOptions } from "./config.js";
 
 export type { CodexProviderOptions };
 

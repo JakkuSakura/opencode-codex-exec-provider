@@ -1,4 +1,4 @@
-import { CodexProviderOptions } from "./config";
+import { CodexProviderOptions } from "./config.js";
 type WireApi = "chat" | "responses";
 export declare function selectModel(client: {
     chat: (id: string) => unknown;

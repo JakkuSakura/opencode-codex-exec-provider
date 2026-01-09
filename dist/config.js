@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { parseToml } from "./toml";
+import { parseToml } from "./toml.js";
 function isProviderConfig(value) {
     return (value ?? {});
 }

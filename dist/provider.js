@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createOpenAI } from "@ai-sdk/openai";
-import { applyQueryParams, loadCodexConfig, resolveModel } from "./config";
+import { applyQueryParams, loadCodexConfig, resolveModel } from "./config.js";
 export function selectModel(client, wireApi, modelId) {
     return wireApi === "chat" ? client.chat(modelId) : client.responses(modelId);
 }

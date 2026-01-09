@@ -1,4 +1,4 @@
-import { createLanguageModel } from "./provider";
+import { createLanguageModel } from "./provider.js";
 export function createCodexProvider(options = {}) {
     const providerId = options.name ?? "codex-config";
     const callable = (modelId) => createLanguageModel(providerId, modelId, options);
