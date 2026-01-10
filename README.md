@@ -63,7 +63,9 @@ Notes:
         "pricing": {
           "input_per_mtoken": 5.0,
           "output_per_mtoken": 15.0
-        }
+        },
+        "//": "validateInstructions: optional guard to drop invalid/oversized instructions (default true)",
+        "validateInstructions": true
       },
       "models": {
         "default": {

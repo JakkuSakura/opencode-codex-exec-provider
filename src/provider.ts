@@ -34,6 +34,7 @@ type InstructionOptions = {
   instructionsFile?: string;
   userInstructionsFile?: string;
   includeUserInstructions?: boolean;
+  validateInstructions?: boolean;
   tools?: unknown;
   pricing?: {
     input_per_mtoken?: number;
@@ -100,6 +101,27 @@ function resolveBaseInstructions(opts: InstructionOptions): string {
     return applyPatch.trim().length > 0 ? `${base}\n${applyPatch}` : base;
   }
   return base;
+}
+
+const MAX_INSTRUCTIONS_LENGTH = 64_000;
+
+function isSafeInstructionText(value: string): boolean {
+  for (let i = 0; i < value.length; i += 1) {
+    const code = value.charCodeAt(i);
+    if (code === 9 || code === 10 || code === 13) continue;
+    if (code < 32 || code === 127) return false;
+  }
+  return true;
+}
+
+function sanitizeInstructions(value: string | undefined, validate: boolean): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return undefined;
+  if (!validate) return trimmed;
+  if (trimmed.length > MAX_INSTRUCTIONS_LENGTH) return undefined;
+  if (!isSafeInstructionText(trimmed)) return undefined;
+  return trimmed;
 }
 
 function resolveUserInstructions(opts: InstructionOptions): string | undefined {
@@ -203,25 +225,34 @@ export function withResponsesInstructions(
   const existing = options.providerOptions?.openai?.instructions;
   if (typeof existing === "string" && existing.length > 0) return options;
 
-  const instructions = resolveBaseInstructions({
-    ...instructionOptions,
-    tools: options.tools,
-  });
-  const userInstructions = resolveUserInstructions(instructionOptions);
+  const shouldValidate = instructionOptions.validateInstructions !== false;
+  const instructions = sanitizeInstructions(
+    resolveBaseInstructions({
+      ...instructionOptions,
+      tools: options.tools,
+    }),
+    shouldValidate,
+  );
+  const userInstructions = sanitizeInstructions(
+    resolveUserInstructions(instructionOptions),
+    shouldValidate,
+  );
   const nextPrompt =
     userInstructions && !hasUserInstructionsTag(options.prompt)
       ? injectUserInstructions(options.prompt, userInstructions)
       : options.prompt;
+
+  const nextOpenAIOptions = {
+    ...(options.providerOptions?.openai ?? {}),
+    ...(instructions ? { instructions } : {}),
+  };
 
   return {
     ...options,
     prompt: nextPrompt,
     providerOptions: {
       ...(options.providerOptions ?? {}),
-      openai: {
-        ...(options.providerOptions?.openai ?? {}),
-        instructions,
-      },
+      openai: nextOpenAIOptions,
     },
   };
 }
@@ -386,6 +417,7 @@ export function createLanguageModel(
     instructionsFile: options.instructionsFile,
     userInstructionsFile: options.userInstructionsFile,
     includeUserInstructions: options.includeUserInstructions,
+    validateInstructions: options.validateInstructions,
     pricing: options.pricing,
   });
 }
