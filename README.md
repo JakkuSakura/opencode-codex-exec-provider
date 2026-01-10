@@ -358,10 +358,3 @@ OpenCode uses the Vercel AI SDK. For images, send a message part with `type: "im
 - API keys are resolved from `~/.codex/auth.json` (same as Codex CLI) or from the env var specified by `env_key`.
 - This provider does not support OpenAI's official consumer Codex endpoints; use a platform API base URL or a compatible proxy.
 
-## Options
-
-- `codexHome`: path to Codex home (default: `~/.codex`)
-- `servers`: optional map of server name → { `api_key`, `base_url` }
-- `server`: selects which server entry to use from `servers` (if omitted, defaults to the server from `~/.codex/config.toml`)
-- `modelServers`: per-model override of `servers`/`server`
-- `pricing`: optional per‑million token cost to compute `providerMetadata.costUsd`
